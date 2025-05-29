@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Фортеця з прапором – Зменшена AR-сцена</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <h1 style="text-align:center">Свєшнікова Анастасія – Зменшена AR-фортеця</h1>
+
+    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      <a-marker type="pattern" url="marker.patt">
+
+        <!-- Основа -->
+        <a-plane rotation="-90 0 0" width="3.3" height="3.3" color="#7BC8A4"></a-plane>
+
+        <!-- Стіни -->
+        <a-box position="0 0.33 0.83" width="2" height="0.66" depth="0.1" color="#8B4513"></a-box>
+        <a-box position="0 0.33 -0.83" width="2" height="0.66" depth="0.1" color="#8B4513"></a-box>
+        <a-box position="-0.95 0.33 0" width="0.1" height="0.66" depth="2" color="#8B4513"></a-box>
+        <a-box position="0.95 0.33 0" width="0.1" height="0.66" depth="2" color="#8B4513"></a-box>
+
+        <!-- Кутові вежі -->
+        <a-cylinder position="-0.95 0.66 -0.95" radius="0.1" height="1.33" color="#A0522D"></a-cylinder>
+        <a-cylinder position="0.95 0.66 -0.95" radius="0.1" height="1.33" color="#A0522D"></a-cylinder>
+        <a-cylinder position="-0.95 0.66 0.95" radius="0.1" height="1.33" color="#A0522D"></a-cylinder>
+        <a-cylinder position="0.95 0.66 0.95" radius="0.1" height="1.33" color="#A0522D"></a-cylinder>
+
+        <!-- Центральна вежа -->
+        <a-cylinder position="0 0.66 0" radius="0.2" height="1.33" color="#A0522D"></a-cylinder>
+
+        <!-- Прапор -->
+        <a-entity position="0 1.33 0">
+          <a-cylinder radius="0.017" height="0.5" color="#333"></a-cylinder>
+          <a-plane position="0.17 0.17 0" width="0.4" height="0.26" color="#FF0000" rotation="0 0 10" material="side: double"></a-plane>
+        </a-entity>
+
+        <!-- Ворота -->
+        <a-box position="0 0.2 -0.83" width="0.5" height="0.4" depth="0.07" color="#654321"></a-box>
+
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
+</html>
