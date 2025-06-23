@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Гумова кулька – VR (WebXR) з камерою</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #111; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
+
+    // Сцена і камера
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 3, 6);
+
+    // Рендерер з підтримкою WebXR
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // Кнопка входу у VR
+    document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] }));
+
+    // Світло
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    scene.add(hemiLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 5);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // Параметри фізики
+    const incline = Math.PI / 6; // 30 градусів
+    const gravity = 9.81;
+    const damping = 1; // Абсолютно пружний удар (без втрат)
+    const radius = 0.5;
+    let vx = 0, vy = 0;
+
+    // Площина - з текстурою дерева
+    const loader = new THREE.TextureLoader();
+    const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+
+    loader.load(
+      'https://raw.githubusercontent.com/Sveshh1/Home_Work_8/main/wood.jpg',
+      (texture) => {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(10, 10);
+        planeMaterial.map = texture;
+        planeMaterial.needsUpdate = true;
+      }
+    );
+
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 20),
+      planeMaterial
+    );
+    plane.rotation.x = -incline;
+    plane.position.set(0, 0, 0);
+    plane.receiveShadow = true;
+    scene.add(plane);
+
+    // Гумова кулька (сфера) - сегменти height збільшені для гладкості
+    const sphereGeometry = new THREE.SphereGeometry(radius, 64, 64);
+    const sphereMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff4444,
+      roughness: 0.4,
+      metalness: 0.3
+    });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphere.castShadow = true;
+    sphere.position.set(0, 3, 0);
+    scene.add(sphere);
+
+    // Основа для тіні
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+
+    // Фізика та анімація кульки
+    function animateBall(delta) {
+  const accel = gravity * Math.sin(incline);
+  vy -= gravity * Math.cos(incline) * delta;
+  vx += accel * delta;
+
+  sphere.position.x += vx * delta;
+  sphere.position.y += vy * delta;
+
+  // Обмеження руху в межах площини
+  const maxX = 5 - radius;
+  const minX = -5 + radius;
+
+  if (sphere.position.x > maxX) {
+    sphere.position.x = maxX;
+    vx = -vx * damping;
+  }
+  if (sphere.position.x < minX) {
+    sphere.position.x = minX;
+    vx = -vx * damping;
+  }
+
+  // Розрахунок координати площини у точці x
+  const planeY = Math.tan(incline) * sphere.position.x;
+
+  if (sphere.position.y - radius < planeY) {
+    sphere.position.y = planeY + radius;
+    vy = -vy * damping;
+  }
+}
+
+
+    // Камера, що рухається слідом за кулькою по площині з невеликим відставанням і по висоті
+    function updateCamera() {
+      // Позиція камери трохи позаду кульки по похилій площині
+      const followX = sphere.position.x - 2;
+      const followY = Math.tan(incline) * followX + 3;
+      const followZ = 5;
+
+      camera.position.lerp(new THREE.Vector3(followX, followY, followZ), 0.1);
+      camera.lookAt(sphere.position.x, sphere.position.y, sphere.position.z);
+    }
+
+    // Обробка зміни розміру вікна
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Анімаційний цикл
+    let lastTime = performance.now();
+    function renderLoop(time) {
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+
+      animateBall(delta);
+      updateCamera();
+
+      renderer.render(scene, camera);
+    }
+
+    renderer.setAnimationLoop(renderLoop);
+  </script>
+</body>
+</html>
